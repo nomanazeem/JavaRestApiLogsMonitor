@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: JavaRestApiLogsMonitor
+
+logging:
+  logstash:
+    host: localhost  # Use 'logstash' if running from inside docker network
+    port: 5000
