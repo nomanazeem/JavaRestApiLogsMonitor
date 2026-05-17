@@ -1,108 +1,129 @@
-# Spring Boot Application with ELK Stack Integration
+```markdown
+# Spring Boot Application with ELK Stack & Grafana
 
-A complete Spring Boot REST API application with centralized logging using ELK Stack (Elasticsearch, Logstash, Kibana) running in Docker containers.
+## Access URLs
 
-## 📋 Table of Contents
+After starting the application and ELK stack, you can access the following services:
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Technologies Used](#technologies-used)
-- [Getting Started](#getting-started)
-    - [1. Clone the Repository](#1-clone-the-repository)
-    - [2. Start ELK Stack](#2-start-elk-stack)
-    - [3. Run Spring Boot Application](#3-run-spring-boot-application)
-    - [4. Access Kibana Dashboard](#4-access-kibana-dashboard)
-- [Configuration](#configuration)
-- [Testing](#testing)
-- [Log Flow](#log-flow)
-- [Troubleshooting](#troubleshooting)
-- [Project Structure](#project-structure)
-- [Useful Commands](#useful-commands)
-- [Contributing](#contributing)
-- [License](#license)
+| Service | URL | Default Credentials |
+|---------|-----|---------------------|
+| Spring Boot Test API | http://localhost:8080/api/test/logs | No authentication |
+| Kibana Dashboard | http://localhost:5601 | No authentication (default setup) |
+| Grafana Dashboard | http://localhost:3000 | Username: `admin` / Password: `admin` |
 
-## Overview
+## How to Setup
 
-This project demonstrates how to integrate a Spring Boot application with the ELK Stack for centralized logging and log analysis. All logs from the Spring Boot application are automatically shipped to Elasticsearch via Logstash and visualized in Kibana.
+### Step 1: Start ELK Stack with Grafana
 
-## Architecture
-┌─────────────────┐ ┌──────────────┐ ┌─────────────────┐ ┌─────────┐
-│ Spring Boot │────▶│ Logstash │────▶│ Elasticsearch │────▶│ Kibana │
-│ Application │ TCP │ Port 5000 │ │ Port 9200 │ │ Port 5601│
-└─────────────────┘ └──────────────┘ └─────────────────┘ └─────────┘
-│ │ │ │
-│ │ │ │
-▼ ▼ ▼ ▼
-Console Logs JSON Format Indexed Data Visualization
-
-text
-
-## Prerequisites
-
-- **Docker** and **Docker Compose** (for ELK Stack)
-- **Java 11 or 17**
-- **Gradle** (or use the wrapper)
-- **Your favorite IDE** (IntelliJ, VS Code, Eclipse)
-
-## Technologies Used
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Spring Boot | 2.7+ / 3.x | REST API Application |
-| Elasticsearch | 8.11.0 | Log storage and indexing |
-| Logstash | 8.11.0 | Log processing and forwarding |
-| Kibana | 8.11.0 | Log visualization |
-| Logstash Logback Encoder | 8.1 | JSON log formatting |
-| Gradle | 7.x / 8.x | Build tool |
-| Docker | 20.10+ | Containerization |
-
-## Getting Started
-
-### 1. Clone the Repository
+Run the following command in your project root where `docker-compose.yml` is located:
 
 ```bash
-git clone <your-repository-url>
-cd <project-directory>
-2. Start ELK Stack
-
-Start all ELK services using Docker Compose:
-
-bash
-# Start all containers in detached mode
 docker-compose up -d
+```
 
-# Verify all containers are running
-docker-compose ps
+This starts Elasticsearch, Logstash, Kibana, and Grafana containers.
 
-# View logs from all services
-docker-compose logs -f
-Expected output:
+### Step 2: Run Spring Boot Application
 
-text
-NAME           STATUS          PORTS
-elasticsearch  Up             0.0.0.0:9200->9200/tcp
-logstash       Up             0.0.0.0:5000->5000/tcp
-kibana         Up             0.0.0.0:5601->5601/tcp
-3. Run Spring Boot Application
-
-bash
-# Using Gradle wrapper
+```bash
 ./gradlew bootRun
+```
 
-# Or build and run JAR
-./gradlew build
+Or use:
+
+```bash
 java -jar build/libs/your-app-name.jar
-4. Access Kibana Dashboard
+```
 
-Open your browser and navigate to: http://localhost:5601
-Go to Menu (☰) → Stack Management → Data Views
-Click Create data view
-Enter:
+### Step 3: Configure Kibana (First Time Only)
 
-Name: springboot-logs
-Index pattern: springboot-logs-*
-Click Next step → Select @timestamp as time field → Create data view
-Go to Menu → Discover to view your logs
+1. Open browser and go to: http://localhost:5601
+2. Click Menu (☰) → Stack Management → Data Views
+3. Click **Create data view**
+4. Enter:
+    - Name: `springboot-logs`
+    - Index pattern: `springboot-logs-*`
+5. Click Next step
+6. Select `@timestamp` as time field
+7. Click Create data view
+8. Go to Menu → Discover to view logs
 
+### Step 4: Configure Grafana (First Time Only)
 
+1. Open browser and go to: http://localhost:3000
+2. Login with:
+    - Username: `admin`
+    - Password: `admin`
+3. Change password when prompted (or skip)
+4. Add Elasticsearch data source:
+    - Click Menu (☰) → Connections → Data sources
+    - Click **Add data source**
+    - Search and select **Elasticsearch**
+    - Configure:
+        - Name: `Spring Boot Logs`
+        - URL: `http://elasticsearch:9200`
+        - Index name: `springboot-logs-*`
+        - Time field name: `@timestamp`
+    - Click **Save & test**
+5. View logs:
+    - Click Menu → Explore
+    - Select `Spring Boot Logs` data source
+    - Click **Run query**
+
+## Generate Test Logs
+
+To generate sample logs and verify everything is working, call the test endpoint:
+
+```bash
+curl http://localhost:8080/api/test/logs
+```
+
+Or open in browser: http://localhost:8080/api/test/logs
+
+## View Your Logs
+
+- **In Kibana:** http://localhost:5601 → Menu → Discover
+- **In Grafana:** http://localhost:3000 → Menu → Explore
+
+## Troubleshooting
+
+### Port Already in Use
+If you see "address already in use" error, change the port in `docker-compose.yml` from 5000:5000 to 5001:5000 (or any other free port).
+
+### Grafana Shows Plugin Error
+Remove the line `GF_INSTALL_PLUGINS` from the Grafana environment section in `docker-compose.yml`. Elasticsearch data source is built-in and doesn't need a plugin.
+
+### No Logs Appearing
+- Wait 10-20 seconds for logs to propagate
+- Check if Spring Boot is running: http://localhost:8080/api/test/logs
+- Check Docker containers: `docker-compose ps`
+
+## Local vs Cloud Deployment
+
+**Local Setup:**
+- Use `localhost` for all URLs
+- Ensure Docker is installed locally
+
+**Cloud Setup:**
+- Replace `localhost` with your server's IP address or domain
+- Open required ports (5601, 3000, 8080, 5000, 9200) in firewall
+- Update Elasticsearch URL in Grafana to use internal Docker hostname: `http://elasticsearch:9200`
+
+## Stopping Everything
+
+```bash
+docker-compose down
+```
+
+To also remove all data:
+
+```bash
+docker-compose down -v
+```
+
+## Requirements
+
+- Docker and Docker Compose
+- Java 11 or 17
+- Minimum 4GB RAM for Docker
+```
