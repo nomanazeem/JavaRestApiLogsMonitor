@@ -37,6 +37,27 @@ services:
     networks:
       - elk-network
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      # 👇 ABSOLUTELY NO GF_INSTALL_PLUGINS LINE HERE
+    ports:
+      - "3000:3000"
+    # Use named volume instead of bind mount for better compatibility
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - elk-network
+
+volumes:
+  grafana-storage:
+    driver: local
+
 networks:
   elk-network:
     driver: bridge
